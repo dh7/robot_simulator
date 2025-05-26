@@ -96,14 +96,23 @@ class RobotSimulator {
         this.leftWheelDistance -= leftDistanceThisStep;
         this.rightWheelDistance -= rightDistanceThisStep;
         
+        // Calculate wheel axis center position (behind the pen by wheelOffset)
+        const wheelAxisX = this.position.x - this.wheelOffset * Math.cos(this.orientation);
+        const wheelAxisY = this.position.y - this.wheelOffset * Math.sin(this.orientation);
+        
         // Calculate the robot's movement based on wheel distances
         if (leftDistanceThisStep === rightDistanceThisStep) {
             // Straight line motion
             const distance = leftDistanceThisStep;
-            this.position.x += distance * Math.cos(this.orientation);
-            this.position.y += distance * Math.sin(this.orientation);
+            // Update wheel axis position
+            const newWheelAxisX = wheelAxisX + distance * Math.cos(this.orientation);
+            const newWheelAxisY = wheelAxisY + distance * Math.sin(this.orientation);
+            
+            // Update robot center (pen) position based on wheel axis movement
+            this.position.x = newWheelAxisX + this.wheelOffset * Math.cos(this.orientation);
+            this.position.y = newWheelAxisY + this.wheelOffset * Math.sin(this.orientation);
         } else {
-            // Turning motion (arc)
+            // Turning motion
             // Handle the case where one wheel is stationary (0 distance)
             if (leftDistanceThisStep === 0 || rightDistanceThisStep === 0) {
                 // One wheel is stationary, rotation around that wheel
@@ -113,55 +122,56 @@ class RobotSimulator {
                 // Calculate rotation angle
                 const angle = rotatingWheel / this.wheelDistance * (isLeftWheelRotating ? -1 : 1);
                 
+                // Calculate stationary wheel position
+                const stationaryWheelX = wheelAxisX + (isLeftWheelRotating ? -1 : 1) * (this.wheelDistance/2) * Math.sin(this.orientation);
+                const stationaryWheelY = wheelAxisY - (isLeftWheelRotating ? -1 : 1) * (this.wheelDistance/2) * Math.cos(this.orientation);
+                
                 // Update orientation
-                this.orientation = (this.orientation + angle) % (2 * Math.PI);
-                if (this.orientation < 0) this.orientation += 2 * Math.PI;
+                const newOrientation = (this.orientation + angle) % (2 * Math.PI);
+                this.orientation = newOrientation < 0 ? newOrientation + 2 * Math.PI : newOrientation;
                 
-                // Calculate new position - rotate around the stationary wheel
-                const pivotWheel = isLeftWheelRotating ? 
-                    { x: this.position.x - (this.wheelDistance/2) * Math.sin(this.orientation - angle), 
-                      y: this.position.y + (this.wheelDistance/2) * Math.cos(this.orientation - angle) } : 
-                    { x: this.position.x + (this.wheelDistance/2) * Math.sin(this.orientation - angle), 
-                      y: this.position.y - (this.wheelDistance/2) * Math.cos(this.orientation - angle) };
-                
-                const sinAngle = Math.sin(angle);
+                // Calculate new wheel axis position by rotating around the stationary wheel
                 const cosAngle = Math.cos(angle);
+                const sinAngle = Math.sin(angle);
                 
-                this.position.x = pivotWheel.x + (this.position.x - pivotWheel.x) * cosAngle - 
-                                 (this.position.y - pivotWheel.y) * sinAngle * (isLeftWheelRotating ? -1 : 1);
-                this.position.y = pivotWheel.y + (this.position.x - pivotWheel.x) * sinAngle * (isLeftWheelRotating ? -1 : 1) + 
-                                 (this.position.y - pivotWheel.y) * cosAngle;
+                const newWheelAxisX = stationaryWheelX + (wheelAxisX - stationaryWheelX) * cosAngle - 
+                                     (wheelAxisY - stationaryWheelY) * sinAngle * (isLeftWheelRotating ? -1 : 1);
+                const newWheelAxisY = stationaryWheelY + (wheelAxisX - stationaryWheelX) * sinAngle * (isLeftWheelRotating ? -1 : 1) + 
+                                     (wheelAxisY - stationaryWheelY) * cosAngle;
+                
+                // Update robot center (pen) position based on new wheel axis position and orientation
+                this.position.x = newWheelAxisX + this.wheelOffset * Math.cos(this.orientation);
+                this.position.y = newWheelAxisY + this.wheelOffset * Math.sin(this.orientation);
             } else {
-                // Both wheels are moving
+                // Both wheels are moving at different speeds
+                // Calculate the radius of the turning circle
                 const R = (this.wheelDistance / 2) * 
                         ((leftDistanceThisStep + rightDistanceThisStep) / 
                          (rightDistanceThisStep - leftDistanceThisStep));
                 
+                // Calculate change in orientation
                 const deltaTheta = (rightDistanceThisStep - leftDistanceThisStep) / this.wheelDistance;
                 
+                // Calculate the Instantaneous Center of Curvature (ICC) relative to wheel axis
+                const ICCX = wheelAxisX - R * Math.sin(this.orientation);
+                const ICCY = wheelAxisY + R * Math.cos(this.orientation);
+                
                 // Update orientation
-                this.orientation = (this.orientation + deltaTheta) % (2 * Math.PI);
-                if (this.orientation < 0) this.orientation += 2 * Math.PI;
-            
-                // Update position
-                if (Math.abs(deltaTheta) > 0.0001) {
-                    const ICC = {
-                        x: this.position.x - R * Math.sin(this.orientation),
-                        y: this.position.y + R * Math.cos(this.orientation)
-                    };
-                    
-                    const cosTheta = Math.cos(deltaTheta);
-                    const sinTheta = Math.sin(deltaTheta);
-                    
-                    // Rotation around ICC
-                    const newX = cosTheta * (this.position.x - ICC.x) - 
-                                 sinTheta * (this.position.y - ICC.y) + ICC.x;
-                    const newY = sinTheta * (this.position.x - ICC.x) + 
-                                 cosTheta * (this.position.y - ICC.y) + ICC.y;
-                    
-                    this.position.x = newX;
-                    this.position.y = newY;
-                }
+                const newOrientation = (this.orientation + deltaTheta) % (2 * Math.PI);
+                this.orientation = newOrientation < 0 ? newOrientation + 2 * Math.PI : newOrientation;
+                
+                // Calculate new wheel axis position by rotating around ICC
+                const cosTheta = Math.cos(deltaTheta);
+                const sinTheta = Math.sin(deltaTheta);
+                
+                const newWheelAxisX = cosTheta * (wheelAxisX - ICCX) - 
+                                    sinTheta * (wheelAxisY - ICCY) + ICCX;
+                const newWheelAxisY = sinTheta * (wheelAxisX - ICCX) + 
+                                    cosTheta * (wheelAxisY - ICCY) + ICCY;
+                
+                // Update robot center (pen) position based on new wheel axis position and orientation
+                this.position.x = newWheelAxisX + this.wheelOffset * Math.cos(this.orientation);
+                this.position.y = newWheelAxisY + this.wheelOffset * Math.sin(this.orientation);
             }
         }
 
