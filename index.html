@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Simulator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        #canvas-container {
+            margin: 20px auto;
+            border: 1px solid #ccc;
+            position: relative;
+        }
+        canvas {
+            background-color: #f8f8f8;
+        }
+        .controls {
+            margin: 20px auto;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .control-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        label {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Robot Simulator</h1>
+    <div id="canvas-container">
+        <canvas id="robotCanvas" width="800" height="600"></canvas>
+    </div>
+    <div class="controls">
+        <div class="control-group">
+            <div>
+                <label for="leftDistance">Left Wheel Distance (cm):</label>
+                <input type="number" id="leftDistance" value="0" min="-50" max="50" step="1">
+            </div>
+            <div>
+                <label for="rightDistance">Right Wheel Distance (cm):</label>
+                <input type="number" id="rightDistance" value="0" min="-50" max="50" step="1">
+            </div>
+        </div>
+        <div class="control-group">
+            <div>
+                <label for="robotSpeed">Robot Speed (cm/s):</label>
+                <input type="number" id="robotSpeed" value="10" min="1" max="20" step="1">
+            </div>
+        </div>
+        <div class="control-group">
+            <button id="startStop">Start</button>
+            <button id="reset">Reset</button>
+            <div>
+                <label for="penDown">Pen Down:</label>
+                <input type="checkbox" id="penDown">
+            </div>
+            <button id="clearDrawing">Clear Drawing</button>
+        </div>
+    </div>
+
+    <script src="src/RobotSimulator.js"></script>
+    <script src="src/RobotVisualizer.js"></script>
+    <script>
+        // This will be initialized in the RobotVisualizer.js file
+        document.addEventListener('DOMContentLoaded', () => {
+            const visualizer = new RobotVisualizer('robotCanvas');
+            visualizer.initialize();
+        });
+    </script>
+</body>
+</html>
