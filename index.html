@@ -115,16 +115,15 @@
             <button id="clearDrawing">Clear Drawing</button>
         </div>
         <div class="position-display">
-            <div id="robot-position">
-                <span>Robot Position:</span>
-                <span id="rx">X: 0.00</span>
-                <span id="ry">Y: 0.00</span>
-                <span id="rtheta">θ: 0.00°</span>
+            <div id="position-display">
+                <p>Robot Position: (<span id="posX">0.00</span>, <span id="posY">0.00</span>) θ: <span id="orientation">0.00</span>°</p>
+                <p id="predictedPosition">Predicted Position: (0.00, 0.00) θ: 0.00°</p>
             </div>
         </div>
     </div>
 
     <script src="src/RobotSimulator.js"></script>
+    <script src="src/RobotPathCalculator.js"></script>
     <script src="src/RobotVisualizer.js"></script>
     <script>
         // This will be initialized in the RobotVisualizer.js file

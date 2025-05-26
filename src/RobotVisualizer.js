@@ -165,59 +165,29 @@ class RobotVisualizer {
 
     /**
      * Calculate wheel distances needed to reach a target position
+     * Uses the RobotPathCalculator utility class with the direct calculation method
      */
     calculateWheelDistancesToTarget() {
         // Get target position from inputs
         const targetX = parseFloat(document.getElementById('targetX').value);
         const targetY = parseFloat(document.getElementById('targetY').value);
         
-        // Get current position and orientation
-        const currentX = this.robot.position.x;
-        const currentY = this.robot.position.y;
-        const currentTheta = this.robot.orientation;
+        // Create target object
+        const target = { x: targetX, y: targetY };
         
-        // Calculate distance and angle to target
-        const dx = targetX - currentX;
-        const dy = targetY - currentY;
-        
-        // Calculate direct distance to target
-        const distanceToTarget = Math.sqrt(dx * dx + dy * dy);
-        
-        // Calculate angle to target in world coordinates
-        let angleToTarget = Math.atan2(dy, dx);
-        
-        // Calculate required rotation (difference between current orientation and angle to target)
-        let rotationNeeded = angleToTarget - currentTheta;
-        
-        // Normalize rotation to -π to π range
-        while (rotationNeeded > Math.PI) rotationNeeded -= 2 * Math.PI;
-        while (rotationNeeded < -Math.PI) rotationNeeded += 2 * Math.PI;
-        
-        // Calculate wheel distances based on rotation and distance
-        const wheelDistance = this.robot.wheelDistance;
-        
-        // For pure rotation: wheels move in opposite directions
-        // For a differential drive robot, the relationship between wheel distances and rotation is:
-        // rotation = (rightDistance - leftDistance) / wheelDistance
-        
-        // Calculate left and right wheel distances to achieve the desired rotation and forward movement
-        let leftDistance, rightDistance;
-        
-        // First approach: First rotate, then move straight
-        // Rotation phase
-        const rotationArc = rotationNeeded * (wheelDistance / 2);
-        
-        // Set wheel distances to achieve rotation, then add forward movement
-        leftDistance = -rotationArc;
-        rightDistance = rotationArc;
-        
-        // Add forward movement (both wheels move the same distance)
-        leftDistance += distanceToTarget;
-        rightDistance += distanceToTarget;
+        // Use the RobotPathCalculator to calculate wheel distances using the direct method
+        const result = RobotPathCalculator.calculateWheelDistancesDirect(this.robot, target);
         
         // Update the wheel distance inputs
-        document.getElementById('leftDistance').value = leftDistance.toFixed(2);
-        document.getElementById('rightDistance').value = rightDistance.toFixed(2);
+        document.getElementById('leftDistance').value = result.leftDistance.toFixed(2);
+        document.getElementById('rightDistance').value = result.rightDistance.toFixed(2);
+        
+        // Show predicted position in the UI (if we have a display element for it)
+        if (document.getElementById('predictedPosition')) {
+            const predictedState = result.predictedState;
+            document.getElementById('predictedPosition').textContent = 
+                `Predicted Position: (${predictedState.position.x.toFixed(2)}, ${predictedState.position.y.toFixed(2)}) θ: ${(predictedState.orientation * 180 / Math.PI).toFixed(2)}°`;
+        }
         
         // Update the robot's wheel distances
         this.updateWheelDistances();
@@ -257,6 +227,30 @@ class RobotVisualizer {
         
         // Continue animation loop
         requestAnimationFrame(this.animate.bind(this));
+    }
+
+    /**
+     * Draw the pen trail using the recorded pen positions
+     */
+    drawPenTrail() {
+        const ctx = this.ctx;
+        const scale = this.scale;
+        const positions = this.robot.penPositions;
+        
+        if (positions.length < 2) return;
+        
+        ctx.strokeStyle = this.trailColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        // In our centered coordinate system, positions are already in world coordinates
+        ctx.moveTo(positions[0].x * scale, -positions[0].y * scale); // Note: Y is inverted in canvas
+        
+        for (let i = 1; i < positions.length; i++) {
+            ctx.lineTo(positions[i].x * scale, -positions[i].y * scale); // Note: Y is inverted in canvas
+        }
+        
+        ctx.stroke();
     }
 
     /**
@@ -449,34 +443,22 @@ class RobotVisualizer {
         // Convert orientation from radians to degrees
         const degrees = (orientation * 180 / Math.PI) % 360;
         
-        // Update the display elements
-        document.getElementById('rx').textContent = `X: ${penPosition.x.toFixed(2)}`;
-        document.getElementById('ry').textContent = `Y: ${penPosition.y.toFixed(2)}`;
-        document.getElementById('rtheta').textContent = `\u03b8: ${degrees.toFixed(2)}\u00b0`;
-    }
-    
-    /**
-     * Draw the pen trail
-     */
-    drawPenTrail() {
-        const ctx = this.ctx;
-        const scale = this.scale;
-        const positions = this.robot.penPositions;
+        // Update the display elements - using the correct element IDs
+        const posXElement = document.getElementById('posX');
+        const posYElement = document.getElementById('posY');
+        const orientationElement = document.getElementById('orientation');
         
-        if (positions.length < 2) return;
-        
-        ctx.strokeStyle = this.trailColor;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        
-        // In our centered coordinate system, positions are already in world coordinates
-        ctx.moveTo(positions[0].x * scale, positions[0].y * scale);
-        
-        for (let i = 1; i < positions.length; i++) {
-            ctx.lineTo(positions[i].x * scale, positions[i].y * scale);
+        if (posXElement) {
+            posXElement.textContent = penPosition.x.toFixed(2);
         }
         
-        ctx.stroke();
+        if (posYElement) {
+            posYElement.textContent = penPosition.y.toFixed(2);
+        }
+        
+        if (orientationElement) {
+            orientationElement.textContent = degrees.toFixed(2);
+        }
     }
 
     /**
