@@ -54,8 +54,8 @@ class RobotPathCalculator {
         console.log('Width to length ratio:', widthToLengthRatio);
         
         // These formulas properly account for robot's differential drive geometry (FIXED SIGN)
-        const leftDistance = deltaX_robot + widthToLengthRatio * deltaY_robot;
-        const rightDistance = deltaX_robot - widthToLengthRatio * deltaY_robot;
+        const rightDistance = deltaX_robot + widthToLengthRatio * deltaY_robot;
+        const leftDistance = deltaX_robot - widthToLengthRatio * deltaY_robot;
         
         console.log('Left wheel distance:', leftDistance, 'cm');
         console.log('Right wheel distance:', rightDistance, 'cm');

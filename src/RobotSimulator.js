@@ -120,7 +120,10 @@ class RobotSimulator {
                 const isLeftWheelRotating = leftDistanceThisStep !== 0;
                 
                 // Calculate rotation angle
-                const angle = rotatingWheel / this.wheelDistance * (isLeftWheelRotating ? -1 : 1);
+                // Positive angle = counter-clockwise (left turn), Negative = clockwise (right turn)
+                // If right wheel is rotating (left stationary), angle should be positive (left turn)
+                // If left wheel is rotating (right stationary), angle should be negative (right turn)
+                const angle = rotatingWheel / this.wheelDistance * (isLeftWheelRotating ? 1 : -1);
                 
                 // Calculate stationary wheel position
                 const stationaryWheelX = wheelAxisX + (isLeftWheelRotating ? -1 : 1) * (this.wheelDistance/2) * Math.sin(this.orientation);
@@ -150,6 +153,7 @@ class RobotSimulator {
                          (rightDistanceThisStep - leftDistanceThisStep));
                 
                 // Calculate change in orientation
+                // Positive deltaTheta = counter-clockwise (left turn), Negative = clockwise (right turn)
                 const deltaTheta = (rightDistanceThisStep - leftDistanceThisStep) / this.wheelDistance;
                 
                 // Calculate the Instantaneous Center of Curvature (ICC) relative to wheel axis
