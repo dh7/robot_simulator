@@ -53,14 +53,12 @@ class RobotSimulator {
     }
 
     /**
-     * Get the current pen position
+     * Get the current pen position (which is the robot center position)
      * @returns {Object} Position with x and y coordinates
      */
     getPenPosition() {
-        // Calculate pen position based on robot position and orientation
-        const penX = this.position.x + this.penOffset * Math.cos(this.orientation);
-        const penY = this.position.y + this.penOffset * Math.sin(this.orientation);
-        return { x: penX, y: penY };
+        // In this model, the pen position IS the robot center position
+        return { ...this.position };
     }
 
     /**
@@ -167,9 +165,9 @@ class RobotSimulator {
             }
         }
 
-        // Record pen position if pen is down
+        // Record robot position if pen is down
         if (this.penDown) {
-            this.penPositions.push(this.getPenPosition());
+            this.penPositions.push({ ...this.position });
         }
     }
 

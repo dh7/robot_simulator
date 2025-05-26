@@ -42,41 +42,11 @@ this.worldToScreen = (x, y) => {
         }
         this.ctx = this.canvas.getContext('2d');
         
-        // Create robot simulator instance
-        this.robot = new RobotSimulator({
-            wheelDistance: 8, // 8 cm between wheels
-            penOffset: 12,    // Pen is 12 cm from wheel axis
-            speed: 10         // 10 cm/s constant speed
-        });
-        
-        // Fill the dots array with a sample path starting at (0,0)
-        this.dots = [];
-        const firstSegmentPoints = 50;
-        const secondSegmentPoints = 50;
-        const step = 10 / firstSegmentPoints; // 10cm / 50 points = 0.2cm per step
-        
-        // First segment: along +x, starting at origin
-        for (let i = 0; i < firstSegmentPoints; i++) {
-            this.dots.push({ x: i * step, y: 0 });
-        }
-        
-        // Second segment: turn right, along +y
-        for (let i = 1; i <= secondSegmentPoints; i++) {
-            this.dots.push({ x: 10, y: i * step });
-        }
-        
-        // Set initial robot position so pen is at (0,0)
-        this.robot.orientation = 0; // Facing +x (first segment direction)
-        this.robot.position = {
-            x: -this.robot.penOffset, // Pen offset is 12cm, so robot center is at (-12, 0)
-            y: 0
-        };
-        
         // Set up event listeners
         this.setupEventListeners();
         
-        // Initial draw
-        this.draw();
+        // Initialize the robot and draw - calls reset() to avoid code duplication
+        this.reset();
     }
 
     /**
@@ -170,11 +140,9 @@ this.worldToScreen = (x, y) => {
         this.robot.orientation = 0;
         
         // Position the robot so that the pen is at (0,0)
-        // Since the pen is penOffset away from the robot center along the orientation angle,
-        // we need to position the robot penOffset units behind the (0,0) point
         this.robot.position = {
-            x: -this.robot.penOffset, // Move robot behind (0,0) by penOffset amount
-            y: 0
+            x: 0,
+            y: 0 
         };
 
         // Reset controls
@@ -347,24 +315,25 @@ this.worldToScreen = (x, y) => {
             }
         }
     }
-
+    
     /**
      * Update the position display in the UI
+     * Shows the pen position instead of the robot center position
      */
     updatePositionDisplay() {
-        // Get current position and orientation
-        const position = this.robot.position;
+        // Get the pen position (this is what we'll display)
+        const penPosition = this.robot.getPenPosition();
         const orientation = this.robot.orientation;
         
         // Convert orientation from radians to degrees
         const degrees = (orientation * 180 / Math.PI) % 360;
         
         // Update the display elements
-        document.getElementById('rx').textContent = `X: ${position.x.toFixed(2)}`;
-        document.getElementById('ry').textContent = `Y: ${position.y.toFixed(2)}`;
-        document.getElementById('rtheta').textContent = `θ: ${degrees.toFixed(2)}°`;
+        document.getElementById('rx').textContent = `X: ${penPosition.x.toFixed(2)}`;
+        document.getElementById('ry').textContent = `Y: ${penPosition.y.toFixed(2)}`;
+        document.getElementById('rtheta').textContent = `\u03b8: ${degrees.toFixed(2)}\u00b0`;
     }
-
+    
     /**
      * Draw the pen trail
      */
