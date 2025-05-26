@@ -182,9 +182,12 @@ this.worldToScreen = (x, y) => {
         document.getElementById('rightDistance').value = 0;
         document.getElementById('robotSpeed').value = 10;
         document.getElementById('penDown').checked = false;
-        document.getElementById('startStop').textContent = 'Start';
+        document.getElementById('startStop').textContent = 'Move';
         
         this.draw();
+        
+        // Update position display
+        this.updatePositionDisplay();
     }
 
     /**
@@ -290,6 +293,9 @@ this.worldToScreen = (x, y) => {
         
         // Restore original canvas state
         ctx.restore();
+        
+        // Update position display
+        this.updatePositionDisplay();
     }
 
     /**
@@ -340,6 +346,23 @@ this.worldToScreen = (x, y) => {
                 ctx.stroke();
             }
         }
+    }
+
+    /**
+     * Update the position display in the UI
+     */
+    updatePositionDisplay() {
+        // Get current position and orientation
+        const position = this.robot.position;
+        const orientation = this.robot.orientation;
+        
+        // Convert orientation from radians to degrees
+        const degrees = (orientation * 180 / Math.PI) % 360;
+        
+        // Update the display elements
+        document.getElementById('rx').textContent = `X: ${position.x.toFixed(2)}`;
+        document.getElementById('ry').textContent = `Y: ${position.y.toFixed(2)}`;
+        document.getElementById('rtheta').textContent = `θ: ${degrees.toFixed(2)}°`;
     }
 
     /**

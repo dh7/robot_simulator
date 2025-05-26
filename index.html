@@ -37,6 +37,19 @@
         label {
             margin-right: 5px;
         }
+        .position-display {
+            margin-top: 15px;
+            font-family: monospace;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        #robot-position {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
     </style>
 </head>
 <body>
@@ -69,6 +82,14 @@
                 <input type="checkbox" id="penDown">
             </div>
             <button id="clearDrawing">Clear Drawing</button>
+        </div>
+        <div class="position-display">
+            <div id="robot-position">
+                <span>Robot Position:</span>
+                <span id="rx">X: 0.00</span>
+                <span id="ry">Y: 0.00</span>
+                <span id="rtheta">θ: 0.00°</span>
+            </div>
         </div>
     </div>
 
