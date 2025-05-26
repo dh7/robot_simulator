@@ -11,22 +11,22 @@ class RobotVisualizer {
      * @param {string} canvasId - ID of the canvas element to draw on
      */
     constructor(canvasId) {
-        // Fill the dots array: 50 points in a straight line (10cm), then 50 points 90° right (10cm)
-// Helper to convert world coordinates to screen coordinates
-this.worldToScreen = (x, y) => {
-    return {
-        x: x * this.scale,
-        y: y * this.scale
-    };
-};
-// We'll fill dots in initialize() once canvas size is known.
+        // Helper to convert world coordinates to screen coordinates
+        this.worldToScreen = (x, y) => {
+            return {
+                x: x * this.scale,
+                y: y * this.scale
+            };
+        };
+        
         this.canvasId = canvasId;
         this.canvas = null;
         this.ctx = null;
         this.robot = null;
         this.isRunning = false;
         this.lastTimestamp = 0;
-        this.scale = 5; // Scale factor: 1 cm = 5 pixels
+        this.scale = 10; // Scale factor: 1 cm = 10 pixels (larger to see -40 to 40 range better)
+        this.gridRange = 40; // Show grid from -40 to 40 in both directions
         this.trailColor = '#3498db'; // Blue color for the pen trail
     }
 
@@ -336,24 +336,33 @@ this.worldToScreen = (x, y) => {
         // Y-axis label
         ctx.fillText('Y', 20, -canvasCenterY + 20);
         
-        // Add coordinate labels every 50px (10cm)
+        // Add coordinate labels at 10cm intervals up to gridRange
         ctx.font = '12px Arial';
         const gridStep = 10 * this.scale; // 10cm grid
         
+        // Calculate max grid labels based on gridRange
+        const maxLabels = Math.floor(this.gridRange / 10);
+        
         // X-axis coordinate numbers
-        for (let x = gridStep; x < canvasCenterX; x += gridStep) {
-            // Positive X
-            ctx.fillText(String(x / this.scale), x, 15);
-            // Negative X
-            ctx.fillText(String(-x / this.scale), -x, 15);
+        for (let i = 1; i <= maxLabels; i++) {
+            const x = i * gridStep;
+            if (x < canvasCenterX) { // Only show if within canvas bounds
+                // Positive X
+                ctx.fillText(String(i * 10), x, 15);
+                // Negative X
+                ctx.fillText(String(-i * 10), -x, 15);
+            }
         }
         
         // Y-axis coordinate numbers
-        for (let y = gridStep; y < canvasCenterY; y += gridStep) {
-            // Positive Y
-            ctx.fillText(String(y / this.scale), -15, -y);
-            // Negative Y
-            ctx.fillText(String(-y / this.scale), -15, y);
+        for (let i = 1; i <= maxLabels; i++) {
+            const y = i * gridStep;
+            if (y < canvasCenterY) { // Only show if within canvas bounds
+                // Positive Y
+                ctx.fillText(String(i * 10), -20, -y);
+                // Negative Y
+                ctx.fillText(String(-i * 10), -20, y);
+            }
         }
         
         // Restore original canvas state
@@ -376,39 +385,54 @@ this.worldToScreen = (x, y) => {
         ctx.strokeStyle = '#ddd';
         ctx.lineWidth = 0.5;
         
-        // Draw vertical lines (every 10cm)
-        const gridSize = 10 * this.scale; // 10cm grid with scaling factor
+        // Grid spacing (10cm)
+        const gridSpacing = 10;
+        const gridSize = gridSpacing * this.scale;
         
-        // Start from center and go right
-        for (let x = 0; x <= halfWidth; x += gridSize) {
-            ctx.beginPath();
-            ctx.moveTo(x, -halfHeight);
-            ctx.lineTo(x, halfHeight);
-            ctx.stroke();
+        // Calculate how many grid lines to draw based on gridRange
+        const maxGridLines = Math.ceil(this.gridRange / gridSpacing);
+        
+        // Draw vertical lines (every 10cm)
+        for (let i = 0; i <= maxGridLines; i++) {
+            const x = i * gridSize;
             
-            // Draw symmetrical line on the left (if not at center)
-            if (x > 0) {
+            // Only draw if within canvas bounds
+            if (x <= halfWidth) {
+                // Positive X line
                 ctx.beginPath();
-                ctx.moveTo(-x, -halfHeight);
-                ctx.lineTo(-x, halfHeight);
+                ctx.moveTo(x, -halfHeight);
+                ctx.lineTo(x, halfHeight);
                 ctx.stroke();
+                
+                // Negative X line (if not at center)
+                if (i > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(-x, -halfHeight);
+                    ctx.lineTo(-x, halfHeight);
+                    ctx.stroke();
+                }
             }
         }
         
         // Draw horizontal lines (every 10cm)
-        // Start from center and go down
-        for (let y = 0; y <= halfHeight; y += gridSize) {
-            ctx.beginPath();
-            ctx.moveTo(-halfWidth, y);
-            ctx.lineTo(halfWidth, y);
-            ctx.stroke();
+        for (let i = 0; i <= maxGridLines; i++) {
+            const y = i * gridSize;
             
-            // Draw symmetrical line above (if not at center)
-            if (y > 0) {
+            // Only draw if within canvas bounds
+            if (y <= halfHeight) {
+                // Positive Y line
                 ctx.beginPath();
-                ctx.moveTo(-halfWidth, -y);
-                ctx.lineTo(halfWidth, -y);
+                ctx.moveTo(-halfWidth, y);
+                ctx.lineTo(halfWidth, y);
                 ctx.stroke();
+                
+                // Negative Y line (if not at center)
+                if (i > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(-halfWidth, -y);
+                    ctx.lineTo(halfWidth, -y);
+                    ctx.stroke();
+                }
             }
         }
     }
