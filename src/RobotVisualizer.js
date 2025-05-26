@@ -244,10 +244,11 @@ class RobotVisualizer {
         ctx.beginPath();
         
         // In our centered coordinate system, positions are already in world coordinates
-        ctx.moveTo(positions[0].x * scale, -positions[0].y * scale); // Note: Y is inverted in canvas
+        // Canvas Y-axis is inverted: negative in canvas = positive in world coordinates
+        ctx.moveTo(positions[0].x * scale, -positions[0].y * scale);
         
         for (let i = 1; i < positions.length; i++) {
-            ctx.lineTo(positions[i].x * scale, -positions[i].y * scale); // Note: Y is inverted in canvas
+            ctx.lineTo(positions[i].x * scale, -positions[i].y * scale);
         }
         
         ctx.stroke();
@@ -440,24 +441,24 @@ class RobotVisualizer {
         const penPosition = this.robot.getPenPosition();
         const orientation = this.robot.orientation;
         
-        // Convert orientation from radians to degrees
-        const degrees = (orientation * 180 / Math.PI) % 360;
+        // Convert orientation from radians to degrees and normalize to -180 to 180 range
+        let degrees = (orientation * 180 / Math.PI);
+        // Normalize to -180 to 180 range for more intuitive display
+        while (degrees > 180) degrees -= 360;
+        while (degrees <= -180) degrees += 360;
         
-        // Update the display elements - using the correct element IDs
-        const posXElement = document.getElementById('posX');
-        const posYElement = document.getElementById('posY');
-        const orientationElement = document.getElementById('orientation');
+        // Format position for display
+        const formattedX = penPosition.x.toFixed(2);
+        const formattedY = penPosition.y.toFixed(2);
         
-        if (posXElement) {
-            posXElement.textContent = penPosition.x.toFixed(2);
-        }
-        
-        if (posYElement) {
-            posYElement.textContent = penPosition.y.toFixed(2);
-        }
-        
-        if (orientationElement) {
-            orientationElement.textContent = degrees.toFixed(2);
+        // Update the position display
+        const positionDiv = document.getElementById('position-display');
+        if (positionDiv) {
+            // Display in a format that's easy to read
+            positionDiv.innerHTML = `
+                <p>Robot Position: (${formattedX}, ${formattedY}) θ: ${degrees.toFixed(2)}°</p>
+                <p id="predictedPosition">Predicted Position: (0.00, 0.00) θ: 0.00°</p>
+            `;
         }
     }
 
