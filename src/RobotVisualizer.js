@@ -95,6 +95,11 @@ this.worldToScreen = (x, y) => {
             this.robot.penPositions = [];
             this.draw();
         });
+        
+        // Calculate path to target position button
+        document.getElementById('calculatePath').addEventListener('click', () => {
+            this.calculateWheelDistancesToTarget();
+        });
     }
 
     /**
@@ -131,8 +136,8 @@ this.worldToScreen = (x, y) => {
         
         // Reset robot
         this.robot = new RobotSimulator({
-            wheelDistance: 8, // 8 cm between wheels
-            penOffset: 12,    // Pen is 12 cm from wheel axis
+            wheelDistance: 8.5, // 8.5 cm between wheels
+            wheelOffset: 12,    // Wheels are 12 cm behind the pen
             speed: 10         // 10 cm/s constant speed
         });
         
@@ -158,6 +163,66 @@ this.worldToScreen = (x, y) => {
         this.updatePositionDisplay();
     }
 
+    /**
+     * Calculate wheel distances needed to reach a target position
+     */
+    calculateWheelDistancesToTarget() {
+        // Get target position from inputs
+        const targetX = parseFloat(document.getElementById('targetX').value);
+        const targetY = parseFloat(document.getElementById('targetY').value);
+        
+        // Get current position and orientation
+        const currentX = this.robot.position.x;
+        const currentY = this.robot.position.y;
+        const currentTheta = this.robot.orientation;
+        
+        // Calculate distance and angle to target
+        const dx = targetX - currentX;
+        const dy = targetY - currentY;
+        
+        // Calculate direct distance to target
+        const distanceToTarget = Math.sqrt(dx * dx + dy * dy);
+        
+        // Calculate angle to target in world coordinates
+        let angleToTarget = Math.atan2(dy, dx);
+        
+        // Calculate required rotation (difference between current orientation and angle to target)
+        let rotationNeeded = angleToTarget - currentTheta;
+        
+        // Normalize rotation to -π to π range
+        while (rotationNeeded > Math.PI) rotationNeeded -= 2 * Math.PI;
+        while (rotationNeeded < -Math.PI) rotationNeeded += 2 * Math.PI;
+        
+        // Calculate wheel distances based on rotation and distance
+        const wheelDistance = this.robot.wheelDistance;
+        
+        // For pure rotation: wheels move in opposite directions
+        // For a differential drive robot, the relationship between wheel distances and rotation is:
+        // rotation = (rightDistance - leftDistance) / wheelDistance
+        
+        // Calculate left and right wheel distances to achieve the desired rotation and forward movement
+        let leftDistance, rightDistance;
+        
+        // First approach: First rotate, then move straight
+        // Rotation phase
+        const rotationArc = rotationNeeded * (wheelDistance / 2);
+        
+        // Set wheel distances to achieve rotation, then add forward movement
+        leftDistance = -rotationArc;
+        rightDistance = rotationArc;
+        
+        // Add forward movement (both wheels move the same distance)
+        leftDistance += distanceToTarget;
+        rightDistance += distanceToTarget;
+        
+        // Update the wheel distance inputs
+        document.getElementById('leftDistance').value = leftDistance.toFixed(2);
+        document.getElementById('rightDistance').value = rightDistance.toFixed(2);
+        
+        // Update the robot's wheel distances
+        this.updateWheelDistances();
+    }
+    
     /**
      * Animation loop
      * @param {number} timestamp - Current timestamp
@@ -258,6 +323,38 @@ this.worldToScreen = (x, y) => {
         ctx.moveTo(0, -canvasCenterY);
         ctx.lineTo(0, canvasCenterY);
         ctx.stroke();
+        
+        // Add axis labels
+        ctx.fillStyle = '#000';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // X-axis label
+        ctx.fillText('X', canvasCenterX - 20, 20);
+        
+        // Y-axis label
+        ctx.fillText('Y', 20, -canvasCenterY + 20);
+        
+        // Add coordinate labels every 50px (10cm)
+        ctx.font = '12px Arial';
+        const gridStep = 10 * this.scale; // 10cm grid
+        
+        // X-axis coordinate numbers
+        for (let x = gridStep; x < canvasCenterX; x += gridStep) {
+            // Positive X
+            ctx.fillText(String(x / this.scale), x, 15);
+            // Negative X
+            ctx.fillText(String(-x / this.scale), -x, 15);
+        }
+        
+        // Y-axis coordinate numbers
+        for (let y = gridStep; y < canvasCenterY; y += gridStep) {
+            // Positive Y
+            ctx.fillText(String(y / this.scale), -15, -y);
+            // Negative Y
+            ctx.fillText(String(-y / this.scale), -15, y);
+        }
         
         // Restore original canvas state
         ctx.restore();
@@ -365,40 +462,40 @@ this.worldToScreen = (x, y) => {
         const ctx = this.ctx;
         const scale = this.scale;
         const wheelDistance = this.robot.wheelDistance;
+        const wheelOffset = this.robot.wheelOffset;
         const wheelRadius = 5; // Wheel radius in pixels
         const wheelWidth = 3;  // Wheel width in pixels
         
         // Draw robot body (triangle)
         ctx.fillStyle = '#e74c3c'; // Red for robot body
         ctx.beginPath();
-        ctx.moveTo(this.robot.penOffset * scale, 0); // Front point (where the pen is)
-        ctx.lineTo(-5 * scale, -wheelDistance/2 * scale); // Back left
-        ctx.lineTo(-5 * scale, wheelDistance/2 * scale);  // Back right
+        ctx.moveTo(0, 0); // Front point (pen position, now at the center)
+        ctx.lineTo(-wheelOffset * scale, -wheelDistance/2 * scale); // Back left
+        ctx.lineTo(-wheelOffset * scale, wheelDistance/2 * scale);  // Back right
         ctx.closePath();
         ctx.fill();
         
         // Draw left wheel
         ctx.fillStyle = '#2c3e50'; // Dark blue for wheels
         ctx.beginPath();
-        ctx.rect(-wheelWidth * scale / 2, -wheelDistance/2 * scale - wheelRadius, 
+        ctx.rect(-wheelOffset * scale, -wheelDistance/2 * scale - wheelRadius, 
                  wheelWidth * scale, wheelRadius * 2);
         ctx.fill();
         
         // Draw right wheel
         ctx.beginPath();
-        ctx.rect(-wheelWidth * scale / 2, wheelDistance/2 * scale - wheelRadius, 
+        ctx.rect(-wheelOffset * scale, wheelDistance/2 * scale - wheelRadius, 
                  wheelWidth * scale, wheelRadius * 2);
         ctx.fill();
         
-        // Draw pen point
-        const penPosition = this.robot.getPenPosition();
+        // Draw pen point (at center)
         if (this.robot.penDown) {
             ctx.fillStyle = '#27ae60'; // Green for pen down
         } else {
             ctx.fillStyle = '#bdc3c7'; // Gray for pen up
         }
         ctx.beginPath();
-        ctx.arc(this.robot.penOffset * scale, 0, 3, 0, Math.PI * 2);
+        ctx.arc(0, 0, 3, 0, Math.PI * 2);
         ctx.fill();
     }
 }

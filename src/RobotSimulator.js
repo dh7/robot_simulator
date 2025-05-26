@@ -6,13 +6,13 @@ class RobotSimulator {
      * Create a new robot simulator
      * @param {Object} config - Configuration object
      * @param {number} config.wheelDistance - Distance between wheels in cm
-     * @param {number} config.penOffset - Distance of pen from wheel axis in cm
+     * @param {number} config.wheelOffset - Distance of wheels behind pen in cm
      * @param {number} config.speed - Constant speed of the robot in cm/s
      */
     constructor(config = {}) {
         // Robot physical configuration
-        this.wheelDistance = config.wheelDistance || 8; // cm
-        this.penOffset = config.penOffset || 12; // cm
+        this.wheelDistance = config.wheelDistance || 8.5; // cm, distance between wheels
+        this.wheelOffset = config.wheelOffset || 12; // cm, distance wheels are behind pen
         this.speed = config.speed || 10; // Constant speed in cm/s
 
         // Robot state

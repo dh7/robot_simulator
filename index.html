@@ -50,6 +50,25 @@
             justify-content: space-between;
             gap: 15px;
         }
+        .target-position {
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            background-color: #f9f9f9;
+        }
+        .target-position h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #333;
+        }
+        #calculatePath {
+            margin-top: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
     </style>
 </head>
 <body>
@@ -73,6 +92,18 @@
                 <label for="robotSpeed">Robot Speed (cm/s):</label>
                 <input type="number" id="robotSpeed" value="10" min="1" max="20" step="1">
             </div>
+        </div>
+        <div class="control-group target-position">
+            <h3>Target Position</h3>
+            <div>
+                <label for="targetX">Target X:</label>
+                <input type="number" id="targetX" value="0" step="1">
+            </div>
+            <div>
+                <label for="targetY">Target Y:</label>
+                <input type="number" id="targetY" value="0" step="1">
+            </div>
+            <button id="calculatePath">Calculate Path</button>
         </div>
         <div class="control-group">
             <button id="startStop">Start</button>
